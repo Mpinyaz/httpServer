@@ -1,6 +1,8 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <netinet/in.h>
+#include <openssl/err.h>
+#include <openssl/ssl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,10 +14,12 @@
 #define BACKLOG 5
 #define MAXIMUM_REQUEST_SIZE 2048
 #define ROOT "./src"
+#define SERVER_CERT "cert.pem"
+#define SERVER_KEY "key.pem"
 
-void handling(int sock) {
+void handling(SSL *ssl) {
   char request[MAXIMUM_REQUEST_SIZE] = {0};
-  recv(sock, request, MAXIMUM_REQUEST_SIZE, 0);
+  SSL_read(ssl, request, MAXIMUM_REQUEST_SIZE);
 
   char method[10], path[255], protocol[20];
 
@@ -33,26 +37,27 @@ void handling(int sock) {
     if (file == -1) {
       char response[1024] = "HTTP/1.1 404 Not Found\r\nContent-Type: "
                             "text/html\r\n\r\n<h1>404 Not Found!</h1>";
-      send(sock, response, strlen(response), 0);
+      SSL_write(ssl, response, strlen(response));
     } else {
       char response_header[512];
       sprintf(response_header,
               "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n");
 
       // Send the headers first
-      send(sock, response_header, strlen(response_header), 0);
+      SSL_write(ssl, response_header, strlen(response_header));
 
       char buf[1024];
       ssize_t readBytes;
 
       // Send the file content
       while ((readBytes = read(file, buf, sizeof(buf))) > 0) {
-        send(sock, buf, readBytes, 0);
+        SSL_write(ssl, buf, readBytes);
       }
       close(file);
     }
-    close(sock);
   }
+  SSL_shutdown(ssl);
+  SSL_free(ssl);
 }
 
 int main(void) {
@@ -60,7 +65,31 @@ int main(void) {
   struct sockaddr_in address;
   int opt = 1;
   int addrlen = sizeof(address);
+  SSL_CTX *ctx;
+  SSL *ssl;
+  // Initialize OpenSSL
+  SSL_load_error_strings();
+  OpenSSL_add_ssl_algorithms();
 
+  // Create SSL context
+  const SSL_METHOD *method = SSLv23_server_method();
+  ctx = SSL_CTX_new(method);
+  if (!ctx) {
+    perror("Unable to create SSL context");
+    ERR_print_errors_fp(stderr);
+    exit(EXIT_FAILURE);
+  }
+
+  // Configure SSL context
+  if (SSL_CTX_use_certificate_file(ctx, SERVER_CERT, SSL_FILETYPE_PEM) <= 0) {
+    ERR_print_errors_fp(stderr);
+    exit(EXIT_FAILURE);
+  }
+
+  if (SSL_CTX_use_PrivateKey_file(ctx, SERVER_KEY, SSL_FILETYPE_PEM) <= 0) {
+    ERR_print_errors_fp(stderr);
+    exit(EXIT_FAILURE);
+  }
   // Create a socket
   if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
     perror("socket failed");
@@ -89,6 +118,7 @@ int main(void) {
     perror("listen");
     exit(EXIT_FAILURE);
   }
+  printf("Connection listening on PORT: %d\n", PORT);
 
   while (1) {
     if ((client_socket = accept(server_fd, (struct sockaddr *)&address,
@@ -97,9 +127,19 @@ int main(void) {
       exit(EXIT_FAILURE);
     }
 
-    // Handle the client message
-    handling(client_socket);
+    ssl = SSL_new(ctx);
+    SSL_set_fd(ssl, client_socket);
+
+    if (SSL_accept(ssl) <= 0) {
+    } else {
+      // Handle the client message
+      handling(ssl);
+    };
+    close(client_socket);
   }
 
+  close(server_fd);
+  SSL_CTX_free(ctx);
+  EVP_cleanup();
   return 0;
 }
