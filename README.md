@@ -1,3 +1,4 @@
 # Simple HTTP Server Implementation in C
 
-- [ ] Serving html files
+- [x] Serving html files
+- [x] enable SSL/TLS connection
