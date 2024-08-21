@@ -1,3 +1,4 @@
+#include "server.h"
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <netinet/in.h>
@@ -9,19 +10,58 @@
 #include <openssl/x509v3.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+SSL_CTX *create_context(const char *ca_pem, const char *cert_pem,
+                        const char *key_pem) {
+  const SSL_METHOD *method;
+  SSL_CTX *ctx;
+  OpenSSL_add_all_algorithms();
+  SSL_load_error_strings();
 
-#define PORT 8080
-#define BACKLOG 5
-#define MAXIMUM_REQUEST_SIZE 2048
-#define ROOT "./src"
-#define SERVER_CERT "cert.pem"
-#define SERVER_KEY "key.pem"
+  BIO *certbio = BIO_new(BIO_s_file());
+  BIO *outbio = BIO_new_fp(stdout, BIO_NOCLOSE);
 
-void handling(SSL *ssl) {
+  if (SSL_library_init() < 0) {
+    BIO_printf(outbio, "Could not initialize the OpenSSL library !\n");
+  }
+
+  method = SSLv23_server_method();
+  ctx = SSL_CTX_new(method);
+  if (!ctx) {
+    perror("Unable to create SSL context");
+    ERR_print_errors_fp(stderr);
+    exit(EXIT_FAILURE);
+  }
+  if (SSL_CTX_load_verify_locations(ctx, ca_pem, NULL) != 1) {
+    fprintf(stderr, "Error loading CA file and/or directory\n");
+    goto fail;
+  }
+
+  SSL_CTX_set_client_CA_list(ctx, SSL_load_client_CA_file(ca_pem));
+  if (SSL_CTX_use_PrivateKey_file(ctx, key_pem, SSL_FILETYPE_PEM) != 1) {
+    fprintf(stderr, "Error loading private key file\n");
+    goto fail;
+  }
+
+  if (SSL_CTX_check_private_key(ctx) != 1) {
+    fprintf(stderr, "Error checking private key\n");
+    goto fail;
+  }
+
+  SSL_CTX_set_mode(ctx, SSL_MODE_AUTO_RETRY);
+  SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
+                     NULL);
+  SSL_CTX_set_verify_depth(ctx, 1);
+
+  return ctx;
+fail:
+  SSL_CTX_free(ctx);
+  return NULL;
+}
+
+void server_handler(SSL *ssl) {
   char request[MAXIMUM_REQUEST_SIZE] = {0};
   SSL_read(ssl, request, MAXIMUM_REQUEST_SIZE);
 
@@ -63,39 +103,6 @@ void handling(SSL *ssl) {
   SSL_shutdown(ssl);
   SSL_free(ssl);
 }
-SSL_CTX *create_context() {
-  const SSL_METHOD *method;
-  SSL_CTX *ctx;
-  OpenSSL_add_all_algorithms();
-  SSL_load_error_strings();
-
-  BIO *certbio = BIO_new(BIO_s_file());
-  BIO *outbio = BIO_new_fp(stdout, BIO_NOCLOSE);
-
-  if (SSL_library_init() < 0) {
-    BIO_printf(outbio, "Could not initialize the OpenSSL library !\n");
-  }
-
-  method = SSLv23_server_method();
-  ctx = SSL_CTX_new(method);
-  if (!ctx) {
-    perror("Unable to create SSL context");
-    ERR_print_errors_fp(stderr);
-    exit(EXIT_FAILURE);
-  }
-  // Configure SSL context
-  if (SSL_CTX_use_certificate_file(ctx, SERVER_CERT, SSL_FILETYPE_PEM) <= 0) {
-    ERR_print_errors_fp(stderr);
-    exit(EXIT_FAILURE);
-  }
-
-  if (SSL_CTX_use_PrivateKey_file(ctx, SERVER_KEY, SSL_FILETYPE_PEM) <= 0) {
-    ERR_print_errors_fp(stderr);
-    exit(EXIT_FAILURE);
-  }
-
-  return ctx;
-}
 
 void showCerts(SSL *ssl) {
   X509 *cert;
@@ -114,37 +121,13 @@ void showCerts(SSL *ssl) {
   } else
     printf("No certificates.\n");
 }
-int main(void) {
-  int server_fd, client_socket;
+
+int openListener(int port) {
+  int server_fd;
   struct sockaddr_in address;
   int opt = 1;
   int addrlen = sizeof(address);
-  SSL_CTX *ctx;
-  SSL *ssl;
-  // Initialize OpenSSL
-  SSL_load_error_strings();
-  OpenSSL_add_ssl_algorithms();
 
-  // Create SSL context
-  const SSL_METHOD *method = SSLv23_server_method();
-  ctx = SSL_CTX_new(method);
-  if (!ctx) {
-    perror("Unable to create SSL context");
-    ERR_print_errors_fp(stderr);
-    exit(EXIT_FAILURE);
-  }
-
-  // Configure SSL context
-  if (SSL_CTX_use_certificate_file(ctx, SERVER_CERT, SSL_FILETYPE_PEM) <= 0) {
-    ERR_print_errors_fp(stderr);
-    exit(EXIT_FAILURE);
-  }
-
-  if (SSL_CTX_use_PrivateKey_file(ctx, SERVER_KEY, SSL_FILETYPE_PEM) <= 0) {
-    ERR_print_errors_fp(stderr);
-    exit(EXIT_FAILURE);
-  }
-  // Create a socket
   if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
     perror("socket failed");
     exit(EXIT_FAILURE);
@@ -159,7 +142,7 @@ int main(void) {
   // Define the server address
   address.sin_family = AF_INET;
   address.sin_addr.s_addr = INADDR_ANY;
-  address.sin_port = htons(PORT);
+  address.sin_port = htons(port);
 
   // Bind the socket to the address
   if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
@@ -172,33 +155,6 @@ int main(void) {
     perror("listen");
     exit(EXIT_FAILURE);
   }
-  printf("Connection listening on PORT: %d\n", PORT);
-
-  while (1) {
-    if ((client_socket = accept(server_fd, (struct sockaddr *)&address,
-                                (socklen_t *)&addrlen)) < 0) {
-      perror("accept");
-      exit(EXIT_FAILURE);
-    }
-
-    printf("Connection accepted");
-    ssl = SSL_new(ctx);
-    SSL_set_fd(ssl, client_socket);
-
-    if (SSL_accept(ssl) <= 0) {
-      fprintf(stderr, "Error: SSL handshake not established with PORT:%d\n",
-              PORT);
-
-    } else {
-      printf("Successfully enabled SSL/TLS session to: %d\n", PORT);
-      // Handle the client message
-      handling(ssl);
-    };
-    close(client_socket);
-  }
-
-  close(server_fd);
-  SSL_CTX_free(ctx);
-  EVP_cleanup();
-  return 0;
+  printf("Connection listening on PORT: %d\n", port);
+  return server_fd;
 }

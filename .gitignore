@@ -1,0 +1,66 @@
+# Ignore build directories
+build/
+bin/
+lib/
+*.o
+*.a
+*.so
+*.exe
+*.dll
+
+# Ignore CMake-generated files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+server.dSYM/
+.cache/
+# Ignore custom CMake-generated folders
+/build/
+*/build/
+
+# Ignore Visual Studio generated files (if using CMake with Visual Studio)
+*.sln
+*.vcxproj
+*.vcxproj.user
+*.vcxproj.filters
+*.ninja
+*.vs/
+*.vscode/
+
+# Ignore Code::Blocks generated files (if using CMake with Code::Blocks)
+*.cbp
+*.depend
+*.layout
+
+# Ignore Xcode generated files (if using CMake with Xcode)
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.xcworkspace/
+*.xcodeproj/
+
+# Ignore any logs or temporary files
+*.log
+*.tmp
+*.swp
+*.bak
+*.swo
+
+# Ignore compiled Python files (if any Python scripts are used in the project)
+__pycache__/
+*.pyc
+
+# Ignore macOS Finder files
+.DS_Store
+
+# Ignore auto-generated dependencies
+*.d
+
+# Ignore custom output directories (if you define specific folders for output)
+output/
+dist/
+
+# Ignore IDE and editor specific files
+.vscode/
+.idea/

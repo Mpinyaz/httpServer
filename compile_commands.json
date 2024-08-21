@@ -1,0 +1,8 @@
+[
+{
+  "directory": "/Users/eltonmpinyuri/Documents/CHub/networkprogramming",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/cc  -I/usr/local/opt/openssl@3/include -std=gnu11 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk -o CMakeFiles/networkprogramming.dir/server.c.o -c /Users/eltonmpinyuri/Documents/CHub/networkprogramming/server.c",
+  "file": "/Users/eltonmpinyuri/Documents/CHub/networkprogramming/server.c",
+  "output": "CMakeFiles/networkprogramming.dir/server.c.o"
+}
+]
