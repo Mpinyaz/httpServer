@@ -64,3 +64,4 @@ dist/
 # Ignore IDE and editor specific files
 .vscode/
 .idea/
+certs
