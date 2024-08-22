@@ -7,7 +7,7 @@ lib/
 *.so
 *.exe
 *.dll
-
+*.pem
 # Ignore CMake-generated files
 CMakeFiles/
 CMakeCache.txt

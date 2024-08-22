@@ -1,8 +1,26 @@
 [
 {
   "directory": "/Users/eltonmpinyuri/Documents/CHub/networkprogramming",
-  "command": "/Library/Developer/CommandLineTools/usr/bin/cc  -I/usr/local/opt/openssl@3/include -std=gnu11 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk -o CMakeFiles/networkprogramming.dir/server.c.o -c /Users/eltonmpinyuri/Documents/CHub/networkprogramming/server.c",
-  "file": "/Users/eltonmpinyuri/Documents/CHub/networkprogramming/server.c",
-  "output": "CMakeFiles/networkprogramming.dir/server.c.o"
+  "command": "/Library/Developer/CommandLineTools/usr/bin/cc  -I/usr/local/opt/openssl@3/include -I/Users/eltonmpinyuri/Documents/CHub/networkprogramming/include -std=gnu11 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk -o CMakeFiles/networkprogramming.dir/src/client.c.o -c /Users/eltonmpinyuri/Documents/CHub/networkprogramming/src/client.c",
+  "file": "/Users/eltonmpinyuri/Documents/CHub/networkprogramming/src/client.c",
+  "output": "CMakeFiles/networkprogramming.dir/src/client.c.o"
+},
+{
+  "directory": "/Users/eltonmpinyuri/Documents/CHub/networkprogramming",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/cc  -I/usr/local/opt/openssl@3/include -I/Users/eltonmpinyuri/Documents/CHub/networkprogramming/include -std=gnu11 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk -o CMakeFiles/networkprogramming.dir/src/errorhandling.c.o -c /Users/eltonmpinyuri/Documents/CHub/networkprogramming/src/errorhandling.c",
+  "file": "/Users/eltonmpinyuri/Documents/CHub/networkprogramming/src/errorhandling.c",
+  "output": "CMakeFiles/networkprogramming.dir/src/errorhandling.c.o"
+},
+{
+  "directory": "/Users/eltonmpinyuri/Documents/CHub/networkprogramming",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/cc  -I/usr/local/opt/openssl@3/include -I/Users/eltonmpinyuri/Documents/CHub/networkprogramming/include -std=gnu11 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk -o CMakeFiles/networkprogramming.dir/src/main.c.o -c /Users/eltonmpinyuri/Documents/CHub/networkprogramming/src/main.c",
+  "file": "/Users/eltonmpinyuri/Documents/CHub/networkprogramming/src/main.c",
+  "output": "CMakeFiles/networkprogramming.dir/src/main.c.o"
+},
+{
+  "directory": "/Users/eltonmpinyuri/Documents/CHub/networkprogramming",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/cc  -I/usr/local/opt/openssl@3/include -I/Users/eltonmpinyuri/Documents/CHub/networkprogramming/include -std=gnu11 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk -o CMakeFiles/networkprogramming.dir/src/server.c.o -c /Users/eltonmpinyuri/Documents/CHub/networkprogramming/src/server.c",
+  "file": "/Users/eltonmpinyuri/Documents/CHub/networkprogramming/src/server.c",
+  "output": "CMakeFiles/networkprogramming.dir/src/server.c.o"
 }
 ]
